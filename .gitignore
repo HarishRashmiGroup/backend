@@ -3,6 +3,7 @@ dist
 node_modules
 temp
 .vscode
+.env
 
 # Logs
 logs
