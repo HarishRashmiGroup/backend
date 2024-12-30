@@ -39,6 +39,7 @@ export class TaskService {
       .filter((task) => task.assignedTo?.email && task.assignedTo.id != 13)
       .map((task) => ({
         to: task.assignedTo.email,
+        cc: task.createdBy.email,
         subject: `Task due on ${new Date(task.dueDate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}`,
         html: `
         <html>
@@ -128,7 +129,7 @@ export class TaskService {
     </div>
   </body>
 </html>`;
-      if (assignedUser.id != 13) this.emailService.sendEmail(assignedUser.email, subject, text);
+      if (assignedUser.id != 13) this.emailService.sendEmail(assignedUser.email, createdBy.email, subject, text);
 
       await em.persistAndFlush(task);
       await em.commit();

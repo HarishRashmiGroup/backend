@@ -20,11 +20,12 @@ export class EmailService {
     });
   }
 
-  async sendEmail(to: string, subject: string, html: string): Promise<void> {
+  async sendEmail(to: string, cc: string, subject: string, html: string): Promise<void> {
     try {
       const mailOptions = {
         from: '"Rashmi Calendar Management" <harish.kumar@rashmigroup.com>',
         to,
+        cc,
         subject,
         html,
       };
@@ -36,12 +37,13 @@ export class EmailService {
   }
 
   async sendBulkEmails(
-    emails: { to: string; subject: string; html: string }[],
+    emails: { to: string; cc: string; subject: string; html: string }[],
   ): Promise<void> {
-    const emailPromises = emails.map(({ to, subject, html }) =>
+    const emailPromises = emails.map(({ to, cc, subject, html }) =>
       this.transporter.sendMail({
         from: '"Rashmi Calendar Management" <harish.kumar@rashmigroup.com>',
         to,
+        cc,
         subject,
         html,
       }),
