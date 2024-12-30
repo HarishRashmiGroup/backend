@@ -80,7 +80,7 @@ export class TaskService {
     console.log(description, dueDate, userId, newUser, status);
 
     try {
-      const createdBy = await this.userRepository.findOneOrFail({ id: 3 });
+      const createdBy = await this.userRepository.findOneOrFail({ id: 2 });
       const noneUser = await this.userRepository.findOneOrFail({ id: 13 });
       let assignedUser = noneUser;
       if (userId && !isNaN(Number(userId))) {
