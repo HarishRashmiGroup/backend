@@ -70,18 +70,17 @@ export class TaskService {
   }
 
   async createTask(
+    createdById: number,
     description: string,
     dueDate: Date,
     userId?: number,
     newUser?: { name: string; email: string },
-    status: TaskStatus = TaskStatus.PENDING
+    status: TaskStatus = TaskStatus.PENDING,
   ) {
     const em = this.em.fork();
     await em.begin();
-    console.log(description, dueDate, userId, newUser, status);
-
     try {
-      const createdBy = await this.userRepository.findOneOrFail({ id: 2 });
+      const createdBy = await this.userRepository.findOneOrFail({ id: createdById });
       const noneUser = await this.userRepository.findOneOrFail({ id: 13 });
       let assignedUser = noneUser;
       if (userId && !isNaN(Number(userId))) {
@@ -129,8 +128,8 @@ export class TaskService {
     </div>
   </body>
 </html>`;
-      if (assignedUser.id != 13) this.emailService.sendEmail(assignedUser.email, createdBy.email, subject, text);
-
+      if (assignedUser.id != 13) this.emailService.sendEmailWithCC(assignedUser.email, createdBy.email, subject, text);
+      console.log(createdBy);
       await em.persistAndFlush(task);
       await em.commit();
 
@@ -148,14 +147,20 @@ export class TaskService {
     }
   }
 
-  async getTasks(month: number, year: number): Promise<TasksRO[]> {
+  async getTasks(month: number, year: number, userId: number): Promise<TasksRO[]> {
     const startOfMonth = new Date(year, month, 1);
     month++;
     const endOfMonth = new Date(year, month, 1);
     const tasks = await this.taskRepository.find({
       dueDate: { $gte: startOfMonth, $lte: endOfMonth },
-
-    }, { populate: ['createdBy', 'assignedTo'] });
+      $or: [
+        { createdBy: userId },
+        { assignedTo: userId }
+      ]
+    }, { 
+      populate: ['createdBy', 'assignedTo'], 
+      orderBy: { createdAt: 'DESC' } 
+    });
     return tasks.map((task) => new TasksRO(task));
   }
 

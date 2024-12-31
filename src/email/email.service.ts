@@ -20,12 +20,27 @@ export class EmailService {
     });
   }
 
-  async sendEmail(to: string, cc: string, subject: string, html: string): Promise<void> {
+  async sendEmailWithCC(to: string, cc: string, subject: string, html: string): Promise<void> {
     try {
       const mailOptions = {
         from: '"Rashmi Calendar Management" <harish.kumar@rashmigroup.com>',
         to,
         cc,
+        subject,
+        html,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+    } catch (error) {
+      throw new Error('Email sending failed');
+    }
+  }
+
+  async sendEmail(to: string, subject: string, html: string): Promise<void> {
+    try {
+      const mailOptions = {
+        from: '"Rashmi Calendar Management" <harish.kumar@rashmigroup.com>',
+        to,
         subject,
         html,
       };
