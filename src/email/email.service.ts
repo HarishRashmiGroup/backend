@@ -3,7 +3,7 @@ import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class EmailService implements OnModuleDestroy {
-  private transporter: nodemailer.Transporter;
+  private transporter: nodemailer.Transporter | null = null;
   private messageQueue: Array<{
     to: string;
     cc?: string;
@@ -12,45 +12,36 @@ export class EmailService implements OnModuleDestroy {
   }> = [];
   private processing = false;
   private readonly logger = new Logger(EmailService.name);
-  private static instance: EmailService;
-  
-  constructor() {
-    if (EmailService.instance) {
-      return EmailService.instance;
-    }
-    EmailService.instance = this;
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.outlook.com',
-      port: 587,
-      secure: false,
-      auth: {
-        user: 'harish.kumar@rashmigroup.com',
-        pass: process.env.email_password,
-      },
-      tls: {
-        ciphers: 'SSLv3',
-      },
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      socketTimeout: 60000,
-    });
 
-    this.transporter.on('idle', () => {
-      this.processQueue();
-    });
+  private async createTransporter() {
+    if (!this.transporter) {
+      this.transporter = nodemailer.createTransport({
+        host: 'smtp.outlook.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'harish.kumar@rashmigroup.com',
+          pass: process.env.email_password,
+        },
+        tls: {
+          ciphers: 'SSLv3',
+        },
+        pool: true,
+        maxConnections: 5,
+        maxMessages: 100,
+        socketTimeout: 60000,
+      });
 
-    this.transporter.verify((error) => {
-      if (error) {
+      try {
+        await this.transporter.verify();
+        this.logger.log('SMTP connection established');
+      } catch (error) {
         this.logger.error('SMTP connection error:', error);
-      } else {
-        this.logger.log('Server is ready to take messages');
+        this.transporter = null;
+        throw error;
       }
-    });
-  }
-
-  async onModuleDestroy() {
-    await this.closeConnection();
+    }
+    return this.transporter;
   }
 
   private async processQueue(): Promise<void> {
@@ -59,26 +50,30 @@ export class EmailService implements OnModuleDestroy {
     }
 
     this.processing = true;
+    const transporter = await this.createTransporter();
 
     try {
-      while (this.messageQueue.length > 0 && this.transporter.isIdle()) {
+      while (this.messageQueue.length > 0 && transporter.isIdle()) {
         const email = this.messageQueue.shift();
         if (email) {
           try {
-            await this.transporter.sendMail({
+            await transporter.sendMail({
               from: '"Rashmi Calendar Management" <harish.kumar@rashmigroup.com>',
               ...email,
             });
             this.logger.debug(`Email sent successfully to ${email.to}`);
           } catch (error) {
             this.logger.error(`Failed to send email to ${email.to}:`, error);
-            this.messageQueue.push(email);
           }
         }
       }
     } finally {
       this.processing = false;
-      if (this.messageQueue.length > 0 && this.transporter.isIdle()) {
+      
+      if (this.messageQueue.length === 0) {
+        await this.closeConnection();
+      }
+      else if (transporter.isIdle()) {
         this.processQueue();
       }
     }
@@ -113,7 +108,6 @@ export class EmailService implements OnModuleDestroy {
   ): Promise<void> {
     try {
       this.messageQueue.push(...emails);
-
       if (!this.processing) {
         await this.processQueue();
       }
@@ -125,10 +119,17 @@ export class EmailService implements OnModuleDestroy {
 
   private async closeConnection(): Promise<void> {
     try {
-      await this.transporter.close();
-      this.logger.log('Email transport connection closed');
+      if (this.transporter) {
+        await this.transporter.close();
+        this.transporter = null;
+        this.logger.log('Email transport connection closed');
+      }
     } catch (error) {
       this.logger.error('Error closing email transport connection:', error);
     }
+  }
+
+  async onModuleDestroy() {
+    await this.closeConnection();
   }
 }
