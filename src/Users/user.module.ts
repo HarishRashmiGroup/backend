@@ -8,11 +8,13 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { jwtConstants } from './constant';
 import { JwtStrategy } from './jwt.strategy';
+import { EmailModule } from 'src/email/email.module';
 
 @Module({
   imports: [MikroOrmModule.forFeature({
     entities: [User]
   }),
+  EmailModule,
   PassportModule.register({ defaultStrategy: 'jwt' }),
   JwtModule.registerAsync({
     useFactory: () => ({
@@ -22,7 +24,7 @@ import { JwtStrategy } from './jwt.strategy';
   })
   ],
   controllers: [UserController],
-  providers: [UserService, EmailService, JwtStrategy],
+  providers: [UserService, JwtStrategy],
   exports: [UserService],
 })
 export class UserModule { }

@@ -32,7 +32,7 @@ export class TaskService {
 
   @Cron('52 5 * * *')
   async handleCron() {
-    console.log("hello");
+    console.log("Cron job called at", new Date());
     const tasks = await this.getPendingDueTasks();
 
     const emails = tasks
