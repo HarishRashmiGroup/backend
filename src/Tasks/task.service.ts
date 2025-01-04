@@ -7,7 +7,7 @@ import { User } from 'src/Users/entities/user.entity';
 import { TasksRO } from './RO/tasks.ro';
 import { EmailService } from 'src/email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { createTaskEmailTemplate } from './task-email.template';
+import { createTaskEmailTemplate } from '../email/email.template';
 
 @Injectable()
 export class TaskService {
@@ -153,7 +153,7 @@ export class TaskService {
     month++;
     const endOfMonth = new Date(year, month, 1);
     const tasks = await this.taskRepository.find({
-      dueDate: { $gte: startOfMonth, $lte: endOfMonth },
+      dueDate: { $gte: startOfMonth, $lt: endOfMonth },
       $or: [
         { createdBy: userId },
         { assignedTo: userId }

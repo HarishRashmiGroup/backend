@@ -7,12 +7,14 @@ import { TaskModule } from './Tasks/task.module';
 import { UserModule } from './Users/user.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { JwtMiddleware } from './common/jwtMiddleware';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
     MikroOrmModule.forRoot(mikroOrmConfig),
     TaskModule,
     UserModule,
+    CommentModule,
     ScheduleModule.forRoot()
   ],
   controllers: [AppController],
