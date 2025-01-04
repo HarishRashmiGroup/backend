@@ -28,7 +28,7 @@ export class TaskController {
     @Param('id') id: number,
     @Body() body: Partial<{ description: string; dueDate: Date; status: TaskStatus, assignedTo: number, newUserName: string, newUserEmail: string}>,
   ) {
-    return this.taskService.updateTask(id, body);
+    return this.taskService.updateTask(1, id, body);
   }
 
   @Delete(':id')

@@ -7,6 +7,7 @@ import { User } from 'src/Users/entities/user.entity';
 import { TasksRO } from './RO/tasks.ro';
 import { EmailService } from 'src/email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { createTaskEmailTemplate } from './task-email.template';
 
 @Injectable()
 export class TaskService {
@@ -157,39 +158,139 @@ export class TaskService {
         { createdBy: userId },
         { assignedTo: userId }
       ]
-    }, { 
-      populate: ['createdBy', 'assignedTo'], 
-      orderBy: { createdAt: 'DESC' } 
+    }, {
+      populate: ['createdBy', 'assignedTo'],
+      orderBy: { createdAt: 'DESC' }
     });
     return tasks.map((task) => new TasksRO(task));
   }
 
 
-  async updateTask(id: number, updatedFields: Partial<{ description: string; dueDate: Date; status: TaskStatus, assignedTo: number, newUserName: string, newUserEmail: string }>) {
-    const task = await this.taskRepository.findOne(id);
+  // async updateTask(id: number, updatedFields: Partial<{ description: string; dueDate: Date; status: TaskStatus, assignedTo: number, newUserName: string, newUserEmail: string }>) {
+  //   const task = await this.taskRepository.findOne(id);
+  //   let assignedTo = task.assignedTo;
+  //   if (!isNaN(updatedFields.assignedTo)) {
+  //     assignedTo = await this.userRepository.findOneOrFail({ id: updatedFields.assignedTo });
+  //   }
+  //   if (updatedFields.newUserEmail && updatedFields.newUserName) {
+  //     const prevUser = await this.userRepository.findOne({ name: updatedFields.newUserName, email: updatedFields.newUserEmail });
+  //     if (prevUser) assignedTo = prevUser;
+  //     else {
+  //       assignedTo = new User({ name: updatedFields.newUserEmail, email: updatedFields.newUserEmail });
+  //       this.em.persist(assignedTo);
+  //     }
+  //   }
+  //   if (task) {
+  //     wrap(task).assign({ description: updatedFields.description, status: updatedFields.status ?? task.status, assignedTo, dueDate: updatedFields.dueDate ?? task.dueDate });
+  //     await this.em.flush();
+  //   }
+  //   return { status: 200, message: "Task updated." };
+  // }
+  async updateTask(userId: number, id: number, updatedFields: Partial<{
+    description: string;
+    dueDate: Date;
+    status: TaskStatus,
+    assignedTo: number,
+    newUserName: string,
+    newUserEmail: string
+  }>) {
+    const task = await this.taskRepository.findOne({ id }, { populate: ['createdBy', 'assignedTo'] });
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    const originalTask = {
+      description: task.description,
+      status: task.status,
+      responsiblePersonName: task.assignedTo.name,
+      createdBy: task.createdBy.name,
+      isOverdue: task.dueDate <= new Date()
+    };
+
     let assignedTo = task.assignedTo;
     if (!isNaN(updatedFields.assignedTo)) {
       assignedTo = await this.userRepository.findOneOrFail({ id: updatedFields.assignedTo });
     }
     if (updatedFields.newUserEmail && updatedFields.newUserName) {
-      const prevUser = await this.userRepository.findOne({ name: updatedFields.newUserName, email: updatedFields.newUserEmail });
+      const prevUser = await this.userRepository.findOne({
+        email: updatedFields.newUserEmail
+      });
       if (prevUser) assignedTo = prevUser;
       else {
-        assignedTo = new User({ name: updatedFields.newUserEmail, email: updatedFields.newUserEmail });
+        assignedTo = new User({
+          name: updatedFields.newUserEmail,
+          email: updatedFields.newUserEmail
+        });
         this.em.persist(assignedTo);
       }
     }
-    if (task) {
-      wrap(task).assign({ description: updatedFields.description, status: updatedFields.status ?? task.status, assignedTo, dueDate: updatedFields.dueDate ?? task.dueDate });
-      await this.em.flush();
+
+    wrap(task).assign({
+      description: updatedFields.description,
+      status: updatedFields.status ?? task.status,
+      assignedTo,
+      dueDate: updatedFields.dueDate ?? task.dueDate
+    });
+    await this.em.flush();
+
+    const updatedTask = {
+      description: task.description,
+      status: task.status,
+      responsiblePersonName: assignedTo.name,
+      createdBy: task.createdBy.name,
+      isOverdue: task.dueDate <= new Date()
+    };
+    if (userId != task.createdBy.id) {
+      try {
+        const emailHtml = createTaskEmailTemplate(originalTask, updatedTask, 'updated');
+        await this.emailService.sendEmailWithCC(
+          task.createdBy.email,
+          assignedTo.email,
+          `Task Updated: ${task.description.substring(0, 50)}...`,
+          emailHtml
+        );
+      } catch (error) {
+        // this.logger.error('Failed to send task update email:', error);
+      }
     }
+
     return { status: 200, message: "Task updated." };
   }
 
-  async deleteTask(id: number): Promise<void> {
-    const task = await this.taskRepository.findOne(id);
-    if (task) {
-      await this.em.removeAndFlush(task);
+  async deleteTask(id: number) {
+    const task = await this.taskRepository.findOne({ id }, { populate: ['createdBy', 'assignedTo'] });
+    if (!task) {
+      throw new Error('Task not found');
     }
+
+    const taskInfo = {
+      description: task.description,
+      status: task.status,
+      responsiblePersonName: task.assignedTo.name,
+      createdBy: task.createdBy.name,
+      isOverdue: task.dueDate < new Date()
+    };
+    await this.em.removeAndFlush(task);
+
+    try {
+      const emailHtml = createTaskEmailTemplate(taskInfo, null, 'deleted');
+      this.emailService.sendEmailWithCC(
+        task.createdBy.email,
+        task.assignedTo.email,
+        `Task Deleted: ${task.description.substring(0, 50)}...`,
+        emailHtml
+      );
+    } catch (error) {
+      // this.logger.error('Failed to send task deletion email:', error);
+    }
+
+    return { status: 200, message: "Task deleted." };
   }
+
+  // async deleteTask(id: number): Promise<void> {
+  //   const task = await this.taskRepository.findOne(id);
+  //   if (task) {
+  //     await this.em.removeAndFlush(task);
+  //   }
+  // }
 }
