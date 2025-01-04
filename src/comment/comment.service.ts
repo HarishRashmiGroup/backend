@@ -34,17 +34,13 @@ export class CommentService {
         const to = didOwnerCommented ? task.assignedTo.email : task.createdBy.email;
         const cc = didOwnerCommented ? task.createdBy.email : task.assignedTo.email
         if (task.assignedTo.id != 13) {
-            try {
-                const emailHtml = commentMailTemplate(description, user.name, task.description);
-                await this.emailService.sendEmailWithCC(
-                    to,
-                    cc,
-                    `New comment on: ${task.description.substring(0, 30)}...`,
-                    emailHtml
-                );
-            } catch (error) {
-                // this.logger.error('Failed to send task update email:', error);
-            }
+            const emailHtml = commentMailTemplate(description, user.name, task.description);
+            this.emailService.sendEmailWithCC(
+                to,
+                cc,
+                `New comment on: ${task.description.substring(0, 30)}...`,
+                emailHtml
+            );
         }
         return { messsage: 'Comment added.', status: 201 };
     }
