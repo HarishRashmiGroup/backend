@@ -40,8 +40,7 @@ export class UserService {
     const user = await this.userRepository.findOneOrFail({ email });
     const otp = this.generateOtp();
     wrap(user).assign({ otp });
-    // this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalenderManagement', `OTP: ${otp}`);
-    console.log(otp);
+    this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalenderManagement', `OTP: ${otp}`);
     await this.em.flush();
     return {message:'otp sent', status: 200};
   }
