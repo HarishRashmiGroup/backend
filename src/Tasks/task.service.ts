@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@mikro-orm/nestjs';
 import { Task, TaskStatus } from './entities/task.entity';
 import { EntityRepository, wrap } from '@mikro-orm/postgresql';
@@ -257,10 +257,14 @@ export class TaskService {
     return { status: 200, message: "Task updated." };
   }
 
-  async deleteTask(id: number) {
+  async deleteTask(id: number, userId: number) {
     const task = await this.taskRepository.findOne({ id }, { populate: ['createdBy', 'assignedTo'] });
     if (!task) {
-      throw new Error('Task not found');
+      throw new NotFoundException('Task not found');
+    }
+
+    if(task.createdBy.id != userId && task.assignedTo.id != userId){
+      throw new BadRequestException('Invalid request.')
     }
 
     const taskInfo = {
@@ -272,16 +276,18 @@ export class TaskService {
     };
     await this.em.removeAndFlush(task);
 
-    try {
-      const emailHtml = createTaskEmailTemplate(taskInfo, null, 'deleted');
-      this.emailService.sendEmailWithCC(
-        task.createdBy.email,
-        task.assignedTo.email,
-        `Task Deleted: ${task.description.substring(0, 50)}...`,
-        emailHtml
-      );
-    } catch (error) {
-      // this.logger.error('Failed to send task deletion email:', error);
+    if (userId != task.createdBy.id) {
+      try {
+        const emailHtml = createTaskEmailTemplate(taskInfo, null, 'deleted');
+        this.emailService.sendEmailWithCC(
+          task.createdBy.email,
+          task.assignedTo.email,
+          `Task Deleted: ${task.description.substring(0, 50)}...`,
+          emailHtml
+        );
+      } catch (error) {
+        // this.logger.error('Failed to send task deletion email:', error);
+      }
     }
 
     return { status: 200, message: "Task deleted." };

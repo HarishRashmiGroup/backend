@@ -23,16 +23,19 @@ export class TaskController {
     return this.taskService.getTasks(month, year,userId);
   }
 
+  @Auth()
   @Patch(':id')
   updateTask(
     @Param('id') id: number,
     @Body() body: Partial<{ description: string; dueDate: Date; status: TaskStatus, assignedTo: number, newUserName: string, newUserEmail: string}>,
+    @User() userId: number
   ) {
-    return this.taskService.updateTask(1, id, body);
+    return this.taskService.updateTask(userId, id, body);
   }
 
+  @Auth()
   @Delete(':id')
-  deleteTask(@Param('id') id: number) {
-    return this.taskService.deleteTask(id);
+  deleteTask(@Param('id') id: number, @User()userId: number) {
+    return this.taskService.deleteTask(id,userId);
   }
 }
