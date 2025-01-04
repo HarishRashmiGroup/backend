@@ -24,11 +24,11 @@ export class CommentService {
     ) { }
     async createTask(userId: number, description: string, taskId: number) {
         const [user, task] = await Promise.all([this.userRepository.findOneOrFail({ id: userId }),
-        this.taskRepository.findOneOrFail({ id: taskId })]);
+        this.taskRepository.findOneOrFail({ id: taskId }, { populate: ['assignedTo', 'createdBy'] })]);
         if (user.id != task.assignedTo.id && user.id != task.createdBy.id) {
             throw new BadRequestException('Bad Request');
         }
-        const comment = new Comment({ description, createdBy: user ,task});
+        const comment = new Comment({ description, createdBy: user, task });
         const didOwnerCommented = userId === task.createdBy.id;
         await this.em.persistAndFlush(comment);
         const to = didOwnerCommented ? task.assignedTo.email : task.createdBy.email;
@@ -55,6 +55,6 @@ export class CommentService {
             description: comment.description,
             createdBy: comment.createdBy,
             date: comment.createdAt,
-          }));
+        }));
     }
 }
