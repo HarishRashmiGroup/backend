@@ -37,16 +37,16 @@ export class UserService {
   }
 
   async sendOTP(email: string) {
-    const user = await this.userRepository.findOneOrFail({ email });
+    const user = await this.userRepository.findOneOrFail({ email: email.trim().toLowerCase() });
     const otp = this.generateOtp();
     wrap(user).assign({ otp });
-    this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalenderManagement', `OTP: ${otp}`);
+    this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalender', `OTP: ${otp}`);
     await this.em.flush();
     return {message:'otp sent', status: 200};
   }
 
   async verifyOTP(email: string, otp: number){
-    const user = await this.userRepository.findOneOrFail({email});
+    const user = await this.userRepository.findOneOrFail({email: email.trim().toLowerCase()});
     if(user.otp == otp){
       wrap(user).assign({otp: null});
       const payload = {

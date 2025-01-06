@@ -92,7 +92,7 @@ export class TaskService {
         else {
           assignedUser = new User({
             name: newUser.name,
-            email: newUser.email
+            email: newUser.email.trim().toLowerCase()
           });
           await em.persistAndFlush(assignedUser);
         }
@@ -218,8 +218,8 @@ export class TaskService {
       if (prevUser) assignedTo = prevUser;
       else {
         assignedTo = new User({
-          name: updatedFields.newUserEmail,
-          email: updatedFields.newUserEmail
+          name: updatedFields.newUserName,
+          email: updatedFields.newUserEmail.trim().toLowerCase()
         });
         this.em.persist(assignedTo);
       }
