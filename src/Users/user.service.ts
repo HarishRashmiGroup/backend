@@ -5,6 +5,7 @@ import { User } from './entities/user.entity';
 import { randomInt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
+import { otpTemplate } from 'src/email/email.template';
 
 @Injectable()
 export class UserService {
@@ -40,9 +41,9 @@ export class UserService {
     const user = await this.userRepository.findOneOrFail({ email: email.trim().toLowerCase() });
     const otp = this.generateOtp();
     wrap(user).assign({ otp });
-    this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalender', `OTP: ${otp}`);
+    this.emailService.sendEmail(user.email, 'Login OTP For RashmiCalender', otpTemplate(otp));
     await this.em.flush();
-    return {message:'otp sent', status: 200};
+    return {message:'otp sent successfully.', status: 200};
   }
 
   async verifyOTP(email: string, otp: number){
