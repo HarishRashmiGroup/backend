@@ -45,11 +45,11 @@ export class CommentService {
         return { messsage: 'Comment added.', status: 201 };
     }
     async getComments(taskId: number) {
-        const [task, comments] = await Promise.all([this.taskRepository.findOneOrFail({ id: taskId }), this.commentRepository.find({ task: taskId }, { orderBy: { createdAt: 'ASC' } })]);
+        const [task, comments] = await Promise.all([this.taskRepository.findOneOrFail({ id: taskId }), this.commentRepository.find({ task: taskId }, { fields: ['createdBy.name', 'description', 'createdAt'], orderBy: { createdAt: 'ASC' } })]);
         //Todo: logic for handling not assigned user.
         return comments.map((comment) => ({
             description: comment.description,
-            createdBy: comment.createdBy,
+            createdBy: comment.createdBy.name,
             date: comment.createdAt,
         }));
     }
