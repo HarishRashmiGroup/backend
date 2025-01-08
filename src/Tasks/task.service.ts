@@ -165,6 +165,54 @@ export class TaskService {
     return tasks.map((task) => new TasksRO(task));
   }
 
+  async getTasksCounts(month: number, year: number, userId: number) {
+    if (isNaN(month) || isNaN(year)) throw new BadRequestException('Invalid month or year.')
+    const startOfMonth = new Date(year, month, 1);
+    month++;
+    const endOfMonth = new Date(year, month, 1);
+    const query = `
+       SELECT 
+          jsonb_object_agg(
+              due_date,
+              jsonb_build_object(
+                  'pending', pending_count,
+                  'paused', paused_count,
+                  'completed', completed_count
+              )
+          ) AS mapping
+      FROM (
+          SELECT
+              TO_CHAR(due_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD') AS due_date,
+              COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending_count,
+              COUNT(CASE WHEN status = 'paused' THEN 1 END) AS paused_count,
+              COUNT(CASE WHEN status = 'completed' THEN 1 END) AS completed_count
+          FROM task
+          WHERE 
+              (task.created_by_id = ${userId} OR task.assigned_to_id = ${userId})
+              AND (task.due_date AT TIME ZONE 'Asia/Kolkata' >= '${startOfMonth.getFullYear()}-${String(startOfMonth.getMonth() + 1).padStart(2, '0')}-${String(startOfMonth.getDate()).padStart(2, '0')}' 
+                  AND task.due_date AT TIME ZONE 'Asia/Kolkata' < '${endOfMonth.getFullYear()}-${String(endOfMonth.getMonth() + 1).padStart(2, '0')}-${String(endOfMonth.getDate()).padStart(2, '0')}')
+          GROUP BY TO_CHAR(due_date AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD')
+      ) AS task_counts;`;
+    const connection = this.em.getConnection();
+    const knex = connection.getKnex();
+    const result = await connection.execute<{ mapping: { [dueDate: string]: { pending: number, paused: number, completed: number } } }[]>(query);
+    return result[0]?.mapping || {};
+  }
+
+  async getAllTaskForDay(date: string, userId: number) {
+    if (isNaN(new Date(date).getTime())) {
+      throw new BadRequestException('Invalid date.');
+    }
+    const tasks = await this.taskRepository.find({
+      dueDate: new Date(date),
+      $or: [
+        { createdBy: userId },
+        { assignedTo: userId }
+      ]
+    }, { populate: ['createdBy', 'assignedTo'] });
+    return tasks.map((task) => (new TasksRO(task)));
+  }
+
 
   // async updateTask(id: number, updatedFields: Partial<{ description: string; dueDate: Date; status: TaskStatus, assignedTo: number, newUserName: string, newUserEmail: string }>) {
   //   const task = await this.taskRepository.findOne(id);
@@ -263,7 +311,7 @@ export class TaskService {
       throw new NotFoundException('Task not found');
     }
 
-    if(task.createdBy.id != userId && task.assignedTo.id != userId){
+    if (task.createdBy.id != userId && task.assignedTo.id != userId) {
       throw new BadRequestException('Invalid request.')
     }
 

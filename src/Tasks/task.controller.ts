@@ -24,6 +24,18 @@ export class TaskController {
   }
 
   @Auth()
+  @Get('counts')
+  getAllTasksCounts(@Query('month') month: number, @Query('year') year:number,@User()userId: number){
+    return this.taskService.getTasksCounts(month, year,userId);
+  }
+
+  @Auth()
+  @Get('day')
+  getAllTasksForDay(@Query('date') date: string, @User()userId: number){
+    return this.taskService.getAllTaskForDay(date,userId);
+  }
+
+  @Auth()
   @Patch(':id')
   updateTask(
     @Param('id') id: number,
