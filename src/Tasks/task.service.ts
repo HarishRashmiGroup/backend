@@ -130,7 +130,6 @@ export class TaskService {
   </body>
 </html>`;
       if (assignedUser.id != 13) this.emailService.sendEmailWithCC(assignedUser.email, createdBy.email, subject, text);
-      console.log(createdBy);
       await em.persistAndFlush(task);
       await em.commit();
 
