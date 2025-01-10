@@ -165,7 +165,7 @@ export class TaskService {
   }
 
   async getTasksCounts(month: number, year: number, userId: number) {
-    if (isNaN(month) || isNaN(year)) throw new BadRequestException('Invalid month or year.')
+    if (isNaN(month) || isNaN(year)) throw new BadRequestException('Invalid month or year.');
     const startOfMonth = new Date(year, month, 1);
     month++;
     const endOfMonth = new Date(year, month, 1);
