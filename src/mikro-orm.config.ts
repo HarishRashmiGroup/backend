@@ -10,7 +10,7 @@ import 'dotenv/config';
 const logger = new Logger('MikroORM');
 
 const config = defineConfig({
-  entities: ['dist/**/*.entity.js'],
+  entities: ['dist/src/**/*.entity.js'],
   entitiesTs: ['src/**/*.entity.ts'],
   driver: PostgreSqlDriver,
   loadStrategy: LoadStrategy.JOINED,
