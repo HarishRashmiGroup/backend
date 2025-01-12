@@ -1,8 +1,8 @@
 import { Controller, Get, Post, Body, Param, Patch, Delete, Query } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { TaskStatus } from './entities/task.entity';
-import { Auth } from 'src/common/decorators/auth.decorator';
-import { User } from 'src/common/decorators/user.decorator';
+import { Auth } from '../common/decorators/auth.decorator';
+import { User } from '../common/decorators/user.decorator';
 
 @Controller('tasks')
 export class TaskController {

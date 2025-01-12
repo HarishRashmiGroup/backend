@@ -3,9 +3,9 @@ import { InjectRepository } from '@mikro-orm/nestjs';
 import { Task, TaskStatus } from './entities/task.entity';
 import { EntityRepository, wrap } from '@mikro-orm/postgresql';
 import { EntityManager } from '@mikro-orm/postgresql';
-import { User } from 'src/Users/entities/user.entity';
+import { User } from '../Users/entities/user.entity';
 import { TasksRO } from './RO/tasks.ro';
-import { EmailService } from 'src/email/email.service';
+import { EmailService } from '../email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { createTaskEmailTemplate } from '../email/email.template';
 

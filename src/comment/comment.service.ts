@@ -1,11 +1,11 @@
 import { InjectRepository } from "@mikro-orm/nestjs";
 import { EntityManager, EntityRepository } from "@mikro-orm/postgresql";
 import { BadRequestException, Injectable } from "@nestjs/common";
-import { Task } from "src/Tasks/entities/task.entity";
-import { User } from "src/Users/entities/user.entity";
+import { Task } from "../Tasks/entities/task.entity";
+import { User } from "../Users/entities/user.entity";
 import { Comment } from "./entities/comment.entity";
-import { commentMailTemplate } from "src/email/email.template";
-import { EmailService } from "src/email/email.service";
+import { commentMailTemplate } from "../email/email.template";
+import { EmailService } from "../email/email.service";
 
 @Injectable()
 export class CommentService {

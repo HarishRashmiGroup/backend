@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { CommentService } from "./comment.service";
-import { Auth } from "src/common/decorators/auth.decorator";
-import { User } from "src/common/decorators/user.decorator";
+import { Auth } from "../common/decorators/auth.decorator";
+import { User } from "../common/decorators/user.decorator";
 
 @Controller('comment')
 export class CommentController {

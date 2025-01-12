@@ -5,7 +5,7 @@ import { User } from './entities/user.entity';
 import { randomInt } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { EmailService } from '../email/email.service';
-import { otpTemplate } from 'src/email/email.template';
+import { otpTemplate } from '../email/email.template';
 
 @Injectable()
 export class UserService {

@@ -1,6 +1,6 @@
 import { Injectable, NestMiddleware } from "@nestjs/common";
 import { NextFunction, Request, Response } from "express";
-import { jwtConstants } from "src/Users/constant";
+import { jwtConstants } from "../Users/constant";
 import jwt from 'jsonwebtoken'
 
 @Injectable()
