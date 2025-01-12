@@ -29,7 +29,7 @@ const config = defineConfig({
     allOrNothing: true,
     dropTables: false,
     safe: true,
-    emit: 'ts', // migration generation mode
+    emit: 'ts',
   },
   driverOptions:{
     connection: { ssl: { rejectUnauthorized: false } },
